@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny rule
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper utilities
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdminOrManagement() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             (getUserData().role == 'Super Admin' || getUserData().role == 'Management');
+    }
+
+    function getUserRole() {
+      return getUserData().role;
+    }
+
+    function getUserName() {
+      return getUserData().name;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_/\\-]+$');
+    }
+
+    // 1. User profiles rules
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      // Only Super Admin/Management can create user records OR user can create their own initial profile as sales exec/crm team default IF they don't elevate themselves to Admin/Management
+      allow create: if isSignedIn() && (
+        isSuperAdminOrManagement() || (
+          request.auth.uid == userId && 
+          request.resource.data.role != 'Super Admin' && 
+          request.resource.data.role != 'Management'
+        )
+      );
+      // Users can modify their own non-role fields; Super Admin/Management can edit anything
+      allow update: if isSignedIn() && (
+        isSuperAdminOrManagement() || (
+          request.auth.uid == userId && 
+          request.resource.data.role == resource.data.role
+        )
+      );
+      allow delete: if isSuperAdminOrManagement();
+    }
+
+    // 2. Leads rules
+    match /leads/{leadId} {
+      // Sales Executives can only view the leads explicitly assigned to them
+      allow get, list: if isSignedIn() && (
+        isSuperAdminOrManagement() || 
+        getUserRole() != 'Sales Executive' || 
+        resource.data.assignedEmployee == getUserName()
+      );
+
+      // Access checks for creation
+      allow create: if isSignedIn() && (
+        isSuperAdminOrManagement() || 
+        getUserRole() != 'Sales Executive' || 
+        request.resource.data.assignedEmployee == getUserName()
+      );
+
+      // Access checks for update or deletion
+      allow update: if isSignedIn() && (
+        isSuperAdminOrManagement() || (
+          // Sales Executive can adjust lead if it's assigned to them, and they can't re-assign it to someone else
+          getUserRole() == 'Sales Executive' && 
+          resource.data.assignedEmployee == getUserName() && 
+          request.resource.data.assignedEmployee == getUserName()
+        ) || (
+          // Other roles (CRM, Marketing, Sales Head, Post Sales, Finance) can manage leads
+          getUserRole() != 'Sales Executive'
+        )
+      );
+
+      allow delete: if isSuperAdminOrManagement();
+    }
+
+    // 3. Activity Logs rules (Audit trails)
+    match /activity_logs/{logId} {
+      allow get, list: if isSignedIn() && (
+        isSuperAdminOrManagement() || 
+        getUserRole() != 'Sales Executive' || 
+        resource.data.operatorName == getUserName()
+      );
+      // Anyone signed in can log their activities, but they cannot tamper with existing logs
+      allow create: if isSignedIn() && request.resource.data.operatorId == request.auth.uid;
+      allow update, delete: if isSuperAdminOrManagement(); // In practice, audit logs are unmodifiable
+    }
+  }
+}

@@ -1,0 +1,204 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a physical user of Teramor CRM with specific Role",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user ID matching Google UID or custom ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "Super Admin",
+            "Management",
+            "Sales Head",
+            "Sales Executive",
+            "CRM Team",
+            "Marketing Team",
+            "Post Sales Team",
+            "Finance Team"
+          ],
+          "description": "Defines accessibility permissions for Teramor"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Indicates whether the user profile is active"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp or server time placeholder"
+        }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Lead": {
+      "title": "Lead",
+      "description": "A single customer lead database record tracking lifecycle, site visits, bookings, and operations",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Lead ID formatted like LD-X"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Primary name of lead or buyer prospect"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Cleaned telephone number used for follow-ups and duplication check"
+        },
+        "alternateNumber": {
+          "type": "string",
+          "description": "Second backup contact number"
+        },
+        "email": {
+          "type": "string",
+          "description": "Prospect email"
+        },
+        "location": {
+          "type": "string",
+          "description": "Prospect residency info"
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Prospect corporate role or business sector"
+        },
+        "budget": {
+          "type": "string",
+          "description": "Budget tier selected"
+        },
+        "requirement": {
+          "type": "string",
+          "description": "Unit size or tier"
+        },
+        "preferredUnitSize": {
+          "type": "string",
+          "description": "Estimated build space preference"
+        },
+        "interestedProject": {
+          "type": "string",
+          "description": "Project chosen from projects list"
+        },
+        "leadSource": {
+          "type": "string",
+          "description": "Media channel that sourced this interest"
+        },
+        "assignedEmployee": {
+          "type": "string",
+          "description": "CRM executive assigned to oversee lead"
+        },
+        "currentStatus": {
+          "type": "string",
+          "description": "Primary Lead Status state from enum"
+        },
+        "createdDate": {
+          "type": "string",
+          "description": "YYYY-MM-DD string representation"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority tier of the lead"
+        },
+        "nextActivity": {
+          "type": "string",
+          "description": "Scheduled activity title"
+        },
+        "nextActivityDate": {
+          "type": "string",
+          "description": "Scheduled date YYYY-MM-DD"
+        },
+        "nextActivityTime": {
+          "type": "string",
+          "description": "Scheduled time HH:MM"
+        },
+        "lastRemark": {
+          "type": "string",
+          "description": "Text overview of last phone contact or walkthrough remarks"
+        },
+        "lastSpokenDate": {
+          "type": "string",
+          "description": "Last speech interaction date"
+        },
+        "siteVisits": {
+          "type": "string",
+          "description": "Array serialized in structural JSON containing SiteVisitDetails"
+        },
+        "bookings": {
+          "type": "string",
+          "description": "Serialized object structure representing BookingDetails"
+        },
+        "timeline": {
+          "type": "string",
+          "description": "Inlined event histories for the lead"
+        },
+        "costPerLead": {
+          "type": "number",
+          "description": "Estimated direct budget spent per lead"
+        }
+      },
+      "required": ["id", "customerName", "phone", "currentStatus", "priority", "createdDate"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit trail log recording record transactions",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "A unique GUID"
+        },
+        "leadId": {
+          "type": "string",
+          "description": "The associated lead database ID"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "System formatted date time string"
+        },
+        "operatorId": {
+          "type": "string",
+          "description": "Auth UID of actor"
+        },
+        "operatorName": {
+          "type": "string",
+          "description": "Name or email of executing employee"
+        },
+        "actionType": {
+          "type": "string",
+          "description": "Created, Edited, Assigned, Transfer, or Deleted status"
+        },
+        "description": {
+          "type": "string",
+          "description": "Literal summary of changes made"
+        }
+      },
+      "required": ["id", "leadId", "timestamp", "operatorId", "operatorName", "actionType", "description"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "The directory containing authenticated staff profiles with custom roles"
+    },
+    "/leads/{leadId}": {
+      "schema": "Lead",
+      "description": "Detailed lead data tracking"
+    },
+    "/activity_logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Unmodifiable system wide action events of lead records"
+    }
+  }
+}

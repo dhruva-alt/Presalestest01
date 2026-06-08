@@ -1,0 +1,6 @@
+{
+  "name": "Teramor CRM",
+  "description": "Premium real estate CRM for Teramor Developers to manage leads, follow-ups, site visits, and booking workflows.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
